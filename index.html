@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Vicky Line Pub Crawl</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="theme-color" content="#0098D4" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <link rel="manifest" href="manifest.webmanifest" />
+
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+    />
+
+    <style>
+        :root {
+            --tfl-victoria: #0098D4;
+            --tfl-red: #E32020;
+            --tfl-grey: #D0D4DA;
+            --tfl-bg: #F3F4F6;
+            --tfl-text: #0B0C0C;
+            --card-bg: #FFFFFF;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--tfl-bg);
+            color: var(--tfl-text);
+            overscroll-behavior: none;
+        }
+
+        #map {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .app-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Header */
+
+        .header {
+            pointer-events: auto;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 10px 16px 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .tfl-roundel {
+            position: relative;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 5px solid var(--tfl-red);
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        .tfl-roundel::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: -4px;
+            right: -4px;
+            height: 10px;
+            background: var(--tfl-victoria);
+            transform: translateY(-50%);
+        }
+
+        .header-text {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .header-title {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: var(--tfl-victoria);
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .header-pill {
+            margin-left: auto;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--tfl-grey);
+            font-size: 11px;
+            background: rgba(243, 244, 246, 0.95);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .header-pill-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--tfl-victoria);
+        }
+
+        /* Floating controls */
+
+        .floating-controls {
+            pointer-events: auto;
+            position: absolute;
+            top: 64px;
+            right: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .fab {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: #ffffff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .fab:active {
+            transform: scale(0.97);
+        }
+
+        /* Bottom sheet */
+
+        .bottom-sheet {
+            pointer-events: auto;
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 10px 14px 18px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(16px);
+            border-radius: 18px 18px 0 0;
+            box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.25);
+            max-height: 58vh;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transform: translateY(0);
+            transition: transform 0.25s ease;
+        }
+
+        /* Collapsed state for full map view */
+        .bottom-sheet.collapsed {
+            max-height: 72px;
+            transform: translateY(calc(100% - 72px));
+        }
+
+        .bottom-sheet-handle {
+            align-self: center;
+            width: 40px;
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.18);
+            margin-bottom: 6px;
+        }
+
+        .sheet-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .sheet-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .sheet-subtitle {
+            font-size: 11px;
+            opacity: 0.75;
+        }
+
+        .sheet-chip-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--tfl-grey);
+            font-size: 10px;
+            background: #f9fafb;
+            white-space: nowrap;
+        }
+
+        .chip-line {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .line-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            border: 2px solid var(--tfl-victoria);
+            position: relative;
+        }
+
+        .line-dot::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            border-radius: inherit;
+            background: var(--tfl-victoria);
+            transform: translate(-50%, -50%);
+        }
+
+        .legs-list {
+            margin-top: 6px;
+            padding: 0;
+            list-style: none;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .leg-card {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            background: var(--card-bg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+        }
+
+        .leg-card:hover {
+            background: #f8fafc;
+        }
+
+        .leg-card.active {
+            border-color: var(--tfl-victoria);
+            box-shadow: 0 0 0 1px rgba(0, 152, 212, 0.16), 0 4px 12px rgba(0, 0, 0, 0.18);
+            background: #e6f7ff;
+        }
+
+        .leg-card-number {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--tfl-victoria);
+            min-width: 18px;
+        }
+
+        .leg-card-main {
+            flex: 1;
+        }
+
+        .leg-route {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .leg-route span {
+            font-weight: 400;
+            opacity: 0.85;
+        }
+
+        .leg-time {
+            font-size: 11px;
+            opacity: 0.75;
+            margin-top: 2px;
+        }
+
+        .leg-meta {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        .leg-cta {
+            font-size: 11px;
+            white-space: nowrap;
+            align-self: center;
+            padding-left: 4px;
+            color: var(--tfl-victoria);
+        }
+
+        .leg-cta::after {
+            content: "›";
+            margin-left: 3px;
+            font-size: 12px;
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(0, 152, 212, 0.1);
+            color: var(--tfl-victoria);
+            margin-left: 4px;
+        }
+
+        .toast {
+            position: absolute;
+            left: 50%;
+            bottom: 62vh;
+            transform: translateX(-50%);
+            max-width: 260px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #ffffff;
+            font-size: 11px;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        @media (min-width: 768px) {
+            .bottom-sheet {
+                left: auto;
+                right: 16px;
+                bottom: 16px;
+                width: 360px;
+                max-height: 72vh;
+                border-radius: 20px;
+            }
+
+            .bottom-sheet.collapsed {
+                transform: translateY(0);
+                max-height: 72vh;
+            }
+
+            .toast {
+                top: 76px;
+                bottom: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div class="app-overlay">
+        <header class="header">
+            <div class="tfl-roundel"></div>
+            <div class="header-text">
+                <div class="header-title">Vicky Line Pub Crawl</div>
+                <div class="header-subtitle">Brixton → Walthamstow Central • Stations & pubs mapped</div>
+            </div>
+            <div class="header-pill">
+                <span class="header-pill-dot"></span>
+                <span>Live walking routes</span>
+            </div>
+        </header>
+
+        <div class="floating-controls">
+            <button class="fab" id="fit-line-btn" title="Show whole line">🗺️</button>
+            <button class="fab" id="locate-btn" title="Locate me">📍</button>
+        </div>
+
+        <div class="toast" id="toast"></div>
+
+        <section class="bottom-sheet" id="bottom-sheet">
+            <div class="bottom-sheet-handle" id="sheet-handle"></div>
+
+            <div class="sheet-header">
+                <div>
+                    <div class="sheet-title">Pub stops along the Victoria line</div>
+                    <div class="sheet-subtitle">Tap a stop or pub marker to see the walking route.</div>
+                    <div class="sheet-chip-row">
+                        <div class="chip">
+                            <span class="chip-line">
+                                <span class="line-dot"></span>
+                                <span>Victoria line</span>
+                            </span>
+                        </div>
+                        <div class="chip">Walking via Mapbox</div>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="legs-list" id="legs-list">
+                <!-- cards injected by JS -->
+            </ul>
+        </section>
+    </div>
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
+
+    <script>
+        // 🔑 Mapbox token – replace with your real public token
+        const MAPBOX_TOKEN = "pk.eyJ1IjoibXVrdW5kcnQiLCJhIjoiY21pemI2dHRyMGxkZTNkczdtM3ZnanA5OCJ9.kWgOZXaiNN5oMHnC_K727w";
+
+        const ROUTES_DATA = {
+            stations: [
+                { lat: 51.4622, lng: -0.1149, name: "Brixton" },
+                { lat: 51.4722, lng: -0.123, name: "Stockwell" },
+                { lat: 51.4861, lng: -0.1253, name: "Vauxhall" },
+                { lat: 51.4893, lng: -0.133, name: "Pimlico" },
+                { lat: 51.4965, lng: -0.1439, name: "Victoria" },
+                { lat: 51.5067, lng: -0.1428, name: "Green Park" },
+                { lat: 51.5152, lng: -0.141, name: "Oxford Circus" },
+                { lat: 51.5247, lng: -0.1368, name: "Warren Street" },
+                { lat: 51.5282, lng: -0.1337, name: "Euston" },
+                { lat: 51.5308, lng: -0.1238, name: "King's Cross St Pancras" },
+                { lat: 51.546, lng: -0.103, name: "Highbury & Islington" },
+                { lat: 51.564, lng: -0.1054, name: "Finsbury Park" },
+                { lat: 51.5833, lng: -0.0747, name: "Seven Sisters" },
+                { lat: 51.5882, lng: -0.0594, name: "Tottenham Hale" },
+                { lat: 51.5867, lng: -0.0401, name: "Blackhorse Road" },
+                { lat: 51.5829, lng: -0.0195, name: "Walthamstow Central" }
+            ],
+            pubs: [
+                { name: "The Beehive", lat: 51.46377, lng: -0.1144, time: "1:00–1:30 PM" },
+                { name: "Royal Oak", lat: 51.47077, lng: -0.11728, time: "1:40–2:10 PM" },
+                { name: "Black Dog", lat: 51.48872, lng: -0.12097, time: "2:20–2:50 PM" },
+                { name: "The Gallery Pub", lat: 51.48875, lng: -0.13431, time: "3:00–3:30 PM" },
+                { name: "The Willow Walk", lat: 51.49502, lng: -0.14238, time: "3:40–4:10 PM" },
+                { name: "Kings Arms", lat: 51.50632, lng: -0.14611, time: "4:40–5:10 PM" },
+                { name: "Argyll Arms", lat: 51.51508, lng: -0.14132, time: "5:20–5:50 PM" },
+                { name: "The Court", lat: 51.52299, lng: -0.13693, time: "6:00–6:30 PM" },
+                { name: "The Rocket", lat: 51.52823, lng: -0.12881, time: "6:40–7:10 PM" },
+                { name: "Barrel Vault", lat: 51.53252, lng: -0.12634, time: "7:20–7:50 PM" },
+                { name: "White Swan", lat: 51.54573, lng: -0.10287, time: "8:20–8:50 PM" },
+                { name: "World's End", lat: 51.56698, lng: -0.10826, time: "9:00–9:30 PM" },
+                { name: "The Station House", lat: 51.57987, lng: -0.07258, time: "9:40–10:10 PM" },
+                { name: "Ferry Boat Inn", lat: 51.58691, lng: -0.05252, time: "10:20–10:50 PM" },
+                { name: "Big Penny Social", lat: 51.59061, lng: -0.04155, time: "11:00–11:30 PM" },
+                { name: "The Goose", lat: 51.58338, lng: -0.01916, time: "11:40 – close" }
+            ]
+        };
+
+        const map = L.map("map", {
+            zoomControl: false
+        }).setView([51.52, -0.11], 12);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "© OpenStreetMap contributors"
+        }).addTo(map);
+
+        L.control.zoom({ position: "topright" }).addTo(map);
+
+        const stations = ROUTES_DATA.stations;
+        const pubs = ROUTES_DATA.pubs;
+
+        const victoriaCoords = stations.map((s) => [s.lat, s.lng]);
+        const victoriaLine = L.polyline(victoriaCoords, {
+            color: "#0098D4",
+            weight: 4,
+            opacity: 0.9
+        }).addTo(map);
+
+        const victoriaBounds = victoriaLine.getBounds();
+        map.fitBounds(victoriaBounds, { padding: [80, 80] });
+
+        for (let i = 0; i < stations.length; i++) {
+            L.polyline(
+                [
+                    [stations[i].lat, stations[i].lng],
+                    [pubs[i].lat, pubs[i].lng]
+                ],
+                {
+                    color: "#888",
+                    weight: 1.5,
+                    opacity: 0.4,
+                    dashArray: "3,6"
+                }
+            ).addTo(map);
+        }
+
+        const stationMarkers = [];
+        stations.forEach((s) => {
+            const m = L.circleMarker([s.lat, s.lng], {
+                radius: 7,
+                color: "#0098D4",
+                weight: 2,
+                fillColor: "#FFFFFF",
+                fillOpacity: 1
+            })
+                .bindPopup(`<b>${s.name}</b><br>Victoria line station`)
+                .addTo(map);
+            stationMarkers.push(m);
+        });
+
+        const pubMarkers = [];
+        const pubIcon = L.icon({
+            iconUrl:
+                "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+            shadowUrl:
+                "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -32],
+            shadowSize: [41, 41]
+        });
+
+        pubs.forEach((p, i) => {
+            const marker = L.marker([p.lat, p.lng], { icon: pubIcon })
+                .bindPopup(`<b>${p.name}</b><br>${p.time}`)
+                .addTo(map);
+            marker.on("click", () => selectLeg(i));
+            pubMarkers.push(marker);
+        });
+
+        const MAPBOX_URL = "https://api.mapbox.com/directions/v5/mapbox/walking/";
+        let activeRouteLayer = null;
+        const routeCache = {};
+        let activeLegIndex = null;
+
+        function showToast(message, delay = 1800) {
+            const toast = document.getElementById("toast");
+            toast.textContent = message;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), delay);
+        }
+
+        function fetchRouteForLeg(index) {
+            const station = stations[index];
+            const pub = pubs[index];
+            const key = index.toString();
+            if (routeCache[key]) {
+                return Promise.resolve(routeCache[key]);
+            }
+
+            const url =
+                `${MAPBOX_URL}${station.lng},${station.lat};${pub.lng},${pub.lat}` +
+                `?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
+
+            return fetch(url)
+                .then((res) => res.json())
+                .then((data) => {
+                    if (!data.routes || !data.routes[0]) {
+                        throw new Error("No route found");
+                    }
+                    const coords = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
+                    routeCache[key] = coords;
+                    return coords;
+                });
+        }
+
+        function drawRouteForLeg(index) {
+            return fetchRouteForLeg(index)
+                .then((coords) => {
+                    if (activeRouteLayer) {
+                        map.removeLayer(activeRouteLayer);
+                    }
+
+                    activeRouteLayer = L.polyline(coords, {
+                        color: "#E32020",
+                        weight: 5,
+                        opacity: 0.95,
+                        dashArray: "12,6"
+                    }).addTo(map);
+
+                    const bounds = L.latLngBounds(coords);
+                    map.fitBounds(bounds, { padding: [90, 90], maxZoom: 17 });
+                })
+                .catch((err) => {
+                    console.error("Routing error:", err);
+                    showToast("Couldn’t fetch walking route just now.");
+                });
+        }
+
+        const legsListEl = document.getElementById("legs-list");
+
+        function buildLegCards() {
+            stations.forEach((s, i) => {
+                const p = pubs[i];
+                const li = document.createElement("li");
+                li.className = "leg-card";
+                li.dataset.index = i;
+                li.innerHTML = `
+                    <div class="leg-card-number">${i + 1}</div>
+                    <div class="leg-card-main">
+                        <div class="leg-route">
+                            ${s.name} <span>→</span> ${p.name}
+                            <span class="badge">Stop ${i + 1}</span>
+                        </div>
+                        <div class="leg-time">${p.time}</div>
+                        <div class="leg-meta">Tap to see walking route & centre map.</div>
+                    </div>
+                    <div class="leg-cta">Route</div>
+                `;
+                li.addEventListener("click", () => selectLeg(i));
+                legsListEl.appendChild(li);
+            });
+        }
+
+        function setActiveLegCard(index) {
+            const cards = legsListEl.querySelectorAll(".leg-card");
+            cards.forEach((card) => card.classList.remove("active"));
+            const activeCard = legsListEl.querySelector(`.leg-card[data-index="${index}"]`);
+            if (activeCard) {
+                activeCard.classList.add("active");
+                activeCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        }
+
+        function selectLeg(index) {
+            activeLegIndex = index;
+            setActiveLegCard(index);
+            const pubMarker = pubMarkers[index];
+            if (pubMarker) {
+                pubMarker.openPopup();
+            }
+            drawRouteForLeg(index);
+            expandSheet(); // make sure the sheet is open when selecting a leg
+        }
+
+        document.getElementById("fit-line-btn").addEventListener("click", () => {
+            if (activeRouteLayer) {
+                map.removeLayer(activeRouteLayer);
+                activeRouteLayer = null;
+            }
+            map.fitBounds(victoriaBounds, { padding: [80, 80] });
+            const cards = legsListEl.querySelectorAll(".leg-card");
+            cards.forEach((c) => c.classList.remove("active"));
+            activeLegIndex = null;
+        });
+
+        document.getElementById("locate-btn").addEventListener("click", () => {
+            if (!navigator.geolocation) {
+                showToast("Geolocation not supported in this browser.");
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    L.circleMarker([latitude, longitude], {
+                        radius: 6,
+                        color: "#00C48C",
+                        weight: 2,
+                        fillColor: "#00C48C",
+                        fillOpacity: 0.7
+                    })
+                        .bindPopup("You are here (approx.)")
+                        .addTo(map)
+                        .openPopup();
+                    map.setView([latitude, longitude], 16);
+                },
+                () => {
+                    showToast("Couldn’t get your location.");
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        });
+
+        buildLegCards();
+
+        setTimeout(() => {
+            selectLeg(0);
+            showToast("Swipe the bar down to reveal the map, or tap a stop to see its route.");
+        }, 700);
+
+        // Bottom sheet interactions: tap + swipe up/down to collapse/expand
+        const bottomSheet = document.getElementById("bottom-sheet");
+        const sheetHandle = document.getElementById("sheet-handle");
+        let sheetExpanded = true;
+        let touchStartY = null;
+        let touchEndY = null;
+
+        function updateSheetState() {
+            if (sheetExpanded) {
+                bottomSheet.classList.remove("collapsed");
+            } else {
+                bottomSheet.classList.add("collapsed");
+            }
+        }
+
+        function toggleSheet() {
+            sheetExpanded = !sheetExpanded;
+            updateSheetState();
+        }
+
+        function expandSheet() {
+            sheetExpanded = true;
+            updateSheetState();
+        }
+
+        function collapseSheet() {
+            sheetExpanded = false;
+            updateSheetState();
+        }
+
+        sheetHandle.addEventListener("click", () => {
+            toggleSheet();
+        });
+
+        bottomSheet.addEventListener("touchstart", (e) => {
+            if (!e.touches || e.touches.length !== 1) return;
+            touchStartY = e.touches[0].clientY;
+            touchEndY = null;
+        });
+
+        bottomSheet.addEventListener("touchmove", (e) => {
+            if (!e.touches || e.touches.length !== 1) return;
+            touchEndY = e.touches[0].clientY;
+        });
+
+        bottomSheet.addEventListener("touchend", () => {
+            if (touchStartY === null || touchEndY === null) return;
+            const deltaY = touchEndY - touchStartY;
+            const threshold = 30; // px
+            if (deltaY > threshold) {
+                // swipe down
+                collapseSheet();
+            } else if (deltaY < -threshold) {
+                // swipe up
+                expandSheet();
+            }
+            touchStartY = null;
+            touchEndY = null;
+        });
+
+        // PWA service worker registration (if you already have service-worker.js)
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker
+                    .register("service-worker.js")
+                    .catch((err) => console.error("SW registration failed:", err));
+            });
+        }
+    </script>
+</body>
+</html>
