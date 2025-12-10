@@ -19,6 +19,12 @@
         crossorigin=""
     />
 
+    <!-- Mapbox GL CSS -->
+    <link
+        href="https://unpkg.com/mapbox-gl@2.15.0/dist/mapbox-gl.css"
+        rel="stylesheet"
+    />
+
     <style>
         :root {
             --tfl-victoria: #0098D4;
@@ -436,14 +442,19 @@
         </section>
     </div>
 
+    <!-- Leaflet JS -->
     <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""
     ></script>
 
+    <!-- Mapbox GL JS + Leaflet bridge -->
+    <script src="https://unpkg.com/mapbox-gl@2.15.0/dist/mapbox-gl.js"></script>
+    <script src="https://unpkg.com/mapbox-gl-leaflet/leaflet-mapbox-gl.js"></script>
+
     <script>
-        // 🔑 Mapbox token – replace with your real public token
+        // 🔑 Mapbox token – your real public token
         const MAPBOX_TOKEN = "pk.eyJ1IjoibXVrdW5kcnQiLCJhIjoiY21pemI2dHRyMGxkZTNkczdtM3ZnanA5OCJ9.kWgOZXaiNN5oMHnC_K727w";
 
         const ROUTES_DATA = {
@@ -476,7 +487,7 @@
                 { name: "The Court", lat: 51.52299, lng: -0.13693, time: "6:00–6:30 PM" },
                 { name: "The Rocket", lat: 51.52823, lng: -0.12881, time: "6:40–7:10 PM" },
                 { name: "Barrel Vault", lat: 51.53252, lng: -0.12634, time: "7:20–7:50 PM" },
-                { name: "White Swan", lat: 51.54573, lng: -0.10287, time: "8:20–8:50 PM" },
+                { name: "White Swan", lat: 51.54573, lng: -0.10287, nameShort: "White Swan", time: "8:20–8:50 PM" },
                 { name: "World's End", lat: 51.56698, lng: -0.10826, time: "9:00–9:30 PM" },
                 { name: "The Station House", lat: 51.57987, lng: -0.07258, time: "9:40–10:10 PM" },
                 { name: "Ferry Boat Inn", lat: 51.58691, lng: -0.05252, time: "10:20–10:50 PM" },
@@ -489,16 +500,19 @@
             zoomControl: false
         }).setView([51.52, -0.11], 12);
 
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: "© OpenStreetMap contributors"
+        // 🔵 TfL-style Mapbox GL base layer
+        const glLayer = L.mapboxGL({
+            accessToken: MAPBOX_TOKEN,
+            style: "mapbox://styles/mukundrt/cmizdrdh3002z01r426d73ayx"
         }).addTo(map);
 
+        // Zoom controls on top-right
         L.control.zoom({ position: "topright" }).addTo(map);
 
         const stations = ROUTES_DATA.stations;
         const pubs = ROUTES_DATA.pubs;
 
+        // Victoria line polyline
         const victoriaCoords = stations.map((s) => [s.lat, s.lng]);
         const victoriaLine = L.polyline(victoriaCoords, {
             color: "#0098D4",
@@ -509,6 +523,7 @@
         const victoriaBounds = victoriaLine.getBounds();
         map.fitBounds(victoriaBounds, { padding: [80, 80] });
 
+        // Connectors from station to pub
         for (let i = 0; i < stations.length; i++) {
             L.polyline(
                 [
@@ -524,6 +539,7 @@
             ).addTo(map);
         }
 
+        // Station markers
         const stationMarkers = [];
         stations.forEach((s) => {
             const m = L.circleMarker([s.lat, s.lng], {
@@ -538,6 +554,7 @@
             stationMarkers.push(m);
         });
 
+        // Pub markers
         const pubMarkers = [];
         const pubIcon = L.icon({
             iconUrl:
@@ -558,6 +575,7 @@
             pubMarkers.push(marker);
         });
 
+        // Mapbox Directions API for walking routes
         const MAPBOX_URL = "https://api.mapbox.com/directions/v5/mapbox/walking/";
         let activeRouteLayer = null;
         const routeCache = {};
