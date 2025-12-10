@@ -492,6 +492,16 @@
             style: "mapbox://styles/mukundrt/cmizdrdh3002z01r426d73ayx"
         }).addTo(map);
 
+        // Transparent street labels overlay (Carto)
+        const labelsLayer = L.tileLayer(
+            "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png",
+            {
+                attribution: "© OpenStreetMap, © Carto",
+                subdomains: "abcd",
+                opacity: 0.9
+            }
+        ).addTo(map);
+
         // Zoom controls on top-right
         L.control.zoom({ position: "topright" }).addTo(map);
 
