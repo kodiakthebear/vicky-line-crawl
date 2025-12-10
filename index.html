@@ -592,8 +592,7 @@
                 return Promise.resolve(routeCache[key]);
             }
 
-            const url = `${MAPBOX_URL}${station.lng},${station.lat};${pub.lng},${pub.lat}` + `?geometries=geojson&overview=full&steps=true&alternatives=true&exclude=motorway&access_token=${MAPBOX_TOKEN}`;
-
+            const url = `${MAPBOX_URL}${station.lng},${station.lat};${pub.lng},${pub.lat}` + `?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
             return fetch(url)
                 .then((res) => res.json())
                 .then((data) => {
