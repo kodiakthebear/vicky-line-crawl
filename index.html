@@ -77,25 +77,11 @@
             border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         }
 
-        .tfl-roundel {
-            position: relative;
-            width: 34px;
+        .tfl-logo {
             height: 34px;
-            border-radius: 50%;
-            border: 5px solid var(--tfl-red);
-            box-sizing: border-box;
+            width: auto;
+            object-fit: contain;
             flex-shrink: 0;
-        }
-
-        .tfl-roundel::before {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: -4px;
-            right: -4px;
-            height: 10px;
-            background: var(--tfl-victoria);
-            transform: translateY(-50%);
         }
 
         .header-text {
@@ -399,7 +385,7 @@
 
     <div class="app-overlay">
         <header class="header">
-            <div class="tfl-roundel"></div>
+            <img src="source.png" class="tfl-logo" alt="Vicky Line Pub Crawl logo" />
             <div class="header-text">
                 <div class="header-title">Vicky Line Pub Crawl</div>
                 <div class="header-subtitle">Brixton → Walthamstow Central • Stations & pubs mapped</div>
@@ -487,7 +473,7 @@
                 { name: "The Court", lat: 51.52299, lng: -0.13693, time: "6:00–6:30 PM" },
                 { name: "The Rocket", lat: 51.52823, lng: -0.12881, time: "6:40–7:10 PM" },
                 { name: "Barrel Vault", lat: 51.53252, lng: -0.12634, time: "7:20–7:50 PM" },
-                { name: "White Swan", lat: 51.54573, lng: -0.10287, nameShort: "White Swan", time: "8:20–8:50 PM" },
+                { name: "White Swan", lat: 51.54573, lng: -0.10287, time: "8:20–8:50 PM" },
                 { name: "World's End", lat: 51.56698, lng: -0.10826, time: "9:00–9:30 PM" },
                 { name: "The Station House", lat: 51.57987, lng: -0.07258, time: "9:40–10:10 PM" },
                 { name: "Ferry Boat Inn", lat: 51.58691, lng: -0.05252, time: "10:20–10:50 PM" },
@@ -606,15 +592,25 @@
                     if (!data.routes || !data.routes[0]) {
                         throw new Error("No route found");
                     }
-                    const coords = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
-                    routeCache[key] = coords;
-                    return coords;
+                    const route = data.routes[0];
+                    const coords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
+                    const durationMin = Math.round(route.duration / 60);
+                    routeCache[key] = { coords, durationMin };
+                    return routeCache[key];
                 });
+        }
+
+        function updateLegTime(index, durationMin) {
+            const card = legsListEl.querySelector(`.leg-card[data-index="${index}"]`);
+            if (card) {
+                const meta = card.querySelector(".leg-meta");
+                meta.innerHTML = `Approx. walking time: ${durationMin} min`;
+            }
         }
 
         function drawRouteForLeg(index) {
             return fetchRouteForLeg(index)
-                .then((coords) => {
+                .then(({ coords, durationMin }) => {
                     if (activeRouteLayer) {
                         map.removeLayer(activeRouteLayer);
                     }
@@ -628,6 +624,13 @@
 
                     const bounds = L.latLngBounds(coords);
                     map.fitBounds(bounds, { padding: [90, 90], maxZoom: 17 });
+
+                    // Update card text and popup with walking time
+                    updateLegTime(index, durationMin);
+                    const p = pubs[index];
+                    pubMarkers[index].setPopupContent(
+                        `<b>${p.name}</b><br>${p.time}<br><i>~${durationMin} min walk from station</i>`
+                    );
                 })
                 .catch((err) => {
                     console.error("Routing error:", err);
@@ -651,7 +654,7 @@
                             <span class="badge">Stop ${i + 1}</span>
                         </div>
                         <div class="leg-time">${p.time}</div>
-                        <div class="leg-meta">Tap to see walking route & centre map.</div>
+                        <div class="leg-meta">Tap to see walking route &amp; centre map.</div>
                     </div>
                     <div class="leg-cta">Route</div>
                 `;
@@ -678,7 +681,7 @@
                 pubMarker.openPopup();
             }
             drawRouteForLeg(index);
-            expandSheet(); // make sure the sheet is open when selecting a leg
+            expandSheet(); // ensure sheet is open when selecting a leg
         }
 
         document.getElementById("fit-line-btn").addEventListener("click", () => {
