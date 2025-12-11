@@ -172,14 +172,14 @@ Below is a simplified flow of how the application processes user interaction, re
 ## Running Locally  
 
 Clone the repository:
-git clone https://github.com/kodiakthebear/vicky-line-crawl
-cd vicky-line-crawl
+`git clone https://github.com/kodiakthebear/vicky-line-crawl
+cd vicky-line-crawl`
 
 To run locally, either open `index.html` directly or start a local web server:
-python3 -m http.server
+`python3 -m http.server`
 
 Open the app in a browser at:
-http://localhost:8000
+`http://localhost:8000`
 
 ---
 
