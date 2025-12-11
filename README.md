@@ -9,7 +9,7 @@
 ## Demo
 
 Live Application  
-[https://vicky-line-crawl.vercel.app/](https://the-famous-vicky-line-crawl-he81-r72trju1m.vercel.app)
+[Click Here](https://the-famous-vicky-line-crawl-he81-r72trju1m.vercel.app)
 
 This link opens the full TfL-styled web app with walking routes, station-to-pub mapping, bottom sheet navigation, and PWA installation support.  
 Open it on your mobile device for the best experience.
