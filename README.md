@@ -1,3 +1,11 @@
+<div align="center">
+  <h1>Vicky Line Pub Crawl</h1>
+  <p>A TfL-inspired progressive web app for exploring London pubs along the Victoria line.</p>
+  <img src="source.png" alt="App Logo" width="120">
+</div>
+
+---
+
 # Vicky Line Pub Crawl  
 A mobile-first, TfL-styled progressive web application that maps every Victoria line station and links it with a curated pub stop. The app provides walking routes, estimated walking durations, and an interactive UI designed to resemble the Victoria line aesthetic. It is installable on both iOS and Android via PWA standards.
 
@@ -157,6 +165,13 @@ Built by The Blackhall Group.
 Design, mapping, routing, and frontend architecture by Joanna "Asia" Sobczak and Mukund "Bo" Tiwari.
 
 ---
+
+## Contributors
+
+| Name | Role | Organisation |
+|------|-------|--------------|
+| Joanna Sobczak | Co-Developer, Designer, Mapping | The Blackhall Group |
+| Mukund Tiwari | Co-Developer, Routing and Frontend | The Blackhall Group |
 
 ## License (MIT)
 MIT License
