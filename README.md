@@ -6,6 +6,14 @@
 
 ---
 
+## Demo
+
+Live Application  
+https://vicky-line-crawl.vercel.app/
+
+This link opens the full TfL-styled web app with walking routes, station-to-pub mapping, bottom sheet navigation, and PWA installation support.  
+Open it on your mobile device for the best experience.
+
 # Vicky Line Pub Crawl  
 A mobile-first, TfL-styled progressive web application that maps every Victoria line station and links it with a curated pub stop. The app provides walking routes, estimated walking durations, and an interactive UI designed to resemble the Victoria line aesthetic. It is installable on both iOS and Android via PWA standards.
 
@@ -109,6 +117,57 @@ The application is a purely client-side web app with no backend. All interaction
 - Served over HTTPS to support geolocation and PWA features  
 
 ---
+
+## How It Works (High-Level Diagram)
+
+Below is a simplified flow of how the application processes user interaction, retrieves routing information, and updates the UI.
+
+                         +------------------------+
+                         |       User Input       |
+                         | (tap station or pub)   |
+                         +-----------+------------+
+                                     |
+                                     v
+                      +--------------+--------------+
+                      |    Frontend Event Handler   |
+                      |  (JavaScript click/gesture) |
+                      +--------------+--------------+
+                                     |
+                                     v
+                  +------------------+-------------------+
+                  |  Build Mapbox Directions API Request |
+                  |  (station entrance → pub location)   |
+                  +------------------+-------------------+
+                                     |
+                                     v
+                     +---------------+---------------+
+                     |     Mapbox Directions API      |
+                     |   (walking route computation)  |
+                     +---------------+---------------+
+                                     |
+                     returns GeoJSON | route + duration
+                                     v
+                  +------------------+------------------+
+                  | Process API Output (coords, time)  |
+                  |  - Cache route data                |
+                  |  - Extract geometry                |
+                  |  - Convert duration to minutes     |
+                  +------------------+------------------+
+                                     |
+                                     v
+                    +----------------+-----------------+
+                    |   Leaflet Rendering Engine       |
+                    | - Draw walking polyline          |
+                    | - Fit map bounds                 |
+                    | - Update markers and popups      |
+                    +----------------+-----------------+
+                                     |
+                                     v
+                     +---------------+---------------+
+                     |      UI Update (Bottom Sheet)  |
+                     | - Highlight active stop        |
+                     | - Display walking time         |
+                     +-------------------------------+
 
 ## Running Locally  
 
